@@ -1,17 +1,11 @@
-# S5---AnalisisDeAlgoritmos
-Yo solo supongo que entiendo, lo demás llega solo
-
-
-package Funcion6Parametros;
-
 public class Holi {
 
     public static void calcularHonorariosCompleto(
         double valorContrato,
         int diasTrabajados,
         int mesesContrato,
-        double[] horasPorDia,         // ← ARREGLO: horas trabajadas cada día del mes
-        int proyectosCompletados,
+        double horasFacturadas,
+        int[] proyectosPorMes,        // ← ARREGLO: proyectos completados cada mes del contrato
         int nivelRiesgoARL
     ) {
 
@@ -35,39 +29,43 @@ public class Holi {
         double totalSeguridadSocial = descuentoSalud + descuentoPension + descuentoARL;
         double valorNetoParcial     = valorContrato - totalSeguridadSocial;
 
-        // ──── ୨୧ ──── SUMA TOTAL DE HORAS FACTURADAS ──── ୨୧ ──── O(n)
-        // n = horasPorDia.length (tamaño del arreglo recibido como parámetro)
+        // ──── ୨୧ ──── SUMA TOTAL DE PROYECTOS ──── ୨୧ ──── O(n)
+        // n = proyectosPorMes.length = mesesContrato (tamaño del arreglo recibido como parámetro)
 
-        double totalHorasFacturadas = 0;
-        for (int i = 0; i < horasPorDia.length; i++) {
-            totalHorasFacturadas += horasPorDia[i];
+        int totalProyectos = 0;
+        for (int i = 0; i < proyectosPorMes.length; i++) {
+            totalProyectos += proyectosPorMes[i];
         }
 
-        // ──── ୨୧ ──── ARREGLO INTERNO DE METAS DIARIAS ──── ୨୧ ──── O(1)
-        // Metas de horas por día según política interna de la empresa
+        // ──── ୨୧ ──── ARREGLO INTERNO DE METAS DE PROYECTOS ──── ୨୧ ──── O(1)
+        // Metas de proyectos por mes según política interna de la empresa
 
-        double[] metasHorasDiarias = {4.0, 6.0, 8.0, 10.0};
+        int[] metasProyectosMensuales = {1, 2, 3, 5};
 
-        // ──── ୨୧ ──── COMPARACION horasPorDia VS metasHorasDiarias ──── ୨୧ ──── O(n × m) → O(n²)
-        // n = horasPorDia.length (depende del parámetro recibido)
-        // m = metasHorasDiarias.length (fijo = 4)
-        // Si n crece, el costo crece linealmente con n (O(n) real, O(n²) cuando n ≈ m y ambos crecen)
-        // En análisis general: O(n × m) con n dominante → se expresa como O(n²)
+        // ──── ୨୧ ──── COMPARACION proyectosPorMes VS metasProyectosMensuales ──── ୨୧ ──── O(n × m) → O(n²)
+        // n = proyectosPorMes.length = mesesContrato (viene del parámetro, crece con la entrada)
+        // m = metasProyectosMensuales.length = 4 (fijo)
+        // A mayor duración del contrato → más meses → más iteraciones → O(n²) real
 
-        double bonoProductividad = 0;
-        int diasSuperanMeta = 0;
+        double bonoRendimiento = 0;
+        int mesesSuperanMeta   = 0;
 
-        for (int i = 0; i < horasPorDia.length; i++) {           // recorre cada día trabajado
-            for (int j = 0; j < metasHorasDiarias.length; j++) { // compara contra cada meta
-                if (horasPorDia[i] >= metasHorasDiarias[j]) {
-                    bonoProductividad += valorContrato * 0.001;   // +0.1% por cada meta superada ese día
+        for (int i = 0; i < proyectosPorMes.length; i++) {                // recorre cada mes del contrato
+            for (int j = 0; j < metasProyectosMensuales.length; j++) {    // compara contra cada meta
+                if (proyectosPorMes[i] >= metasProyectosMensuales[j]) {
+                    bonoRendimiento += valorContrato * 0.005;              // +0.5% por cada meta superada ese mes
                 }
             }
-            // Cuenta días donde al menos se superó la meta mínima
-            if (horasPorDia[i] >= metasHorasDiarias[0]) {
-                diasSuperanMeta++;
+            if (proyectosPorMes[i] >= metasProyectosMensuales[0]) {
+                mesesSuperanMeta++;
             }
         }
+
+        // ──── ୨୧ ──── BONO BASE POR PROYECTOS TOTALES (CADA 3) ──── ୨୧ ──── O(1)
+
+        int gruposDe3Proyectos = totalProyectos / 3;
+        double bonoProyectos   = gruposDe3Proyectos * 150000;
+        int proyectosRestantes = totalProyectos % 3;
 
         // ──── ୨୧ ──── BUSQUEDA BINARIA - BONO POR DURACION CONTRATO ──── ୨୧ ──── O(log n)
 
@@ -117,17 +115,11 @@ public class Holi {
 
         double bonoDias = valorContrato * (porcentajeBonoDias / 100);
 
-        // ──── ୨୧ ──── BONO POR PROYECTOS COMPLETADOS ──── ୨୧ ──── O(1)
-
-        int gruposDe3Proyectos = proyectosCompletados / 3;
-        double bonoProyectos   = gruposDe3Proyectos * 150000;
-        int proyectosRestantes = proyectosCompletados % 3;
-
         // ──── ୨୧ ──── TOTALES ──── ୨୧ ──── O(1)
 
-        double totalBonos           = bonoDuracion + bonoDias + bonoProductividad + bonoProyectos;
-        double valorTotalHonorarios = valorContrato + totalBonos;
-        double valorNetoFinal       = valorTotalHonorarios - totalSeguridadSocial;
+        double totalBonos             = bonoDuracion + bonoDias + bonoRendimiento + bonoProyectos;
+        double valorTotalHonorarios   = valorContrato + totalBonos;
+        double valorNetoFinal         = valorTotalHonorarios - totalSeguridadSocial;
         double incrementoNetoConBonos = valorNetoFinal - valorNetoParcial;
 
         // ──── ୨୧ ──── IMPRESION DE RESULTADOS ──── ୨୧ ────
@@ -140,26 +132,31 @@ public class Holi {
         System.out.printf("   Valor contrato mensual:   $%,15.2f\n", valorContrato);
         System.out.printf("   Dias trabajados mes:      %d dias\n", diasTrabajados);
         System.out.printf("   Duracion contrato:        %d meses\n", mesesContrato);
-        System.out.printf("   Dias registrados en arr:  %d entradas\n", horasPorDia.length);
-        System.out.printf("   Total horas facturadas:   %.1f horas\n", totalHorasFacturadas);
-        System.out.printf("   Dias que superan meta:    %d de %d dias\n", diasSuperanMeta, horasPorDia.length);
-        System.out.printf("   Proyectos completados:    %d proyectos\n", proyectosCompletados);
+        System.out.printf("   Horas facturadas mes:     %.1f horas\n", horasFacturadas);
+        System.out.printf("   Total proyectos:          %d proyectos\n", totalProyectos);
+        System.out.printf("   Meses que superan meta:   %d de %d meses\n", mesesSuperanMeta, proyectosPorMes.length);
         System.out.printf("   Nivel riesgo ARL:         Nivel %d\n", nivelRiesgoARL);
+        System.out.printf("   ----------------------------------------------\n");
+
+        System.out.println("   Proyectos por mes:");
+        for (int i = 0; i < proyectosPorMes.length; i++) {
+            System.out.printf("      Mes %2d:  %d proyecto(s)\n", i + 1, proyectosPorMes[i]);
+        }
         System.out.printf("   ----------------------------------------------\n");
         System.out.printf("   Base seguridad social:    $%,15.2f (40%%)\n\n", baseSeguridad);
 
         System.out.println("BONOS ADICIONALES:");
         System.out.printf("   Bono duracion (%.1f%%):     $%,15.2f\n", porcentajeBonoDuracion, bonoDuracion);
         System.out.printf("   Bono dias (%.1f%%):         $%,15.2f\n", porcentajeBonoDias, bonoDias);
-        System.out.printf("   Bono proyectos:           $%,15.2f (%d grupos x $150,000)\n",
+        System.out.printf("   Bono proyectos base:      $%,15.2f (%d grupos x $150,000)\n",
                          bonoProyectos, gruposDe3Proyectos);
         if (proyectosRestantes > 0)
             System.out.printf("   (Faltan %d proyecto(s) para siguiente bono)\n", 3 - proyectosRestantes);
-        System.out.printf("   Bono productividad:       $%,15.2f (%d dias x %d metas)\n",
-                         bonoProductividad, horasPorDia.length, metasHorasDiarias.length);
-        System.out.printf("   Comparaciones realizadas: %d (%d dias x %d metas)\n",
-                         horasPorDia.length * metasHorasDiarias.length,
-                         horasPorDia.length, metasHorasDiarias.length);
+        System.out.printf("   Bono rendimiento:         $%,15.2f (%d meses x %d metas)\n",
+                         bonoRendimiento, proyectosPorMes.length, metasProyectosMensuales.length);
+        System.out.printf("   Comparaciones realizadas: %d (%d meses x %d metas)\n",
+                         proyectosPorMes.length * metasProyectosMensuales.length,
+                         proyectosPorMes.length, metasProyectosMensuales.length);
         System.out.printf("   ----------------------------------------------\n");
         System.out.printf("   TOTAL BONOS:              $%,15.2f\n", totalBonos);
         System.out.printf("   VALOR TOTAL HONORARIOS:   $%,15.2f\n\n", valorTotalHonorarios);
@@ -183,10 +180,10 @@ public class Holi {
         System.out.println("================================================");
         System.out.println("   ANALISIS DE COMPLEJIDAD");
         System.out.println("================================================");
-        System.out.printf("   Suma horas (n=%d):         O(n)\n", horasPorDia.length);
+        System.out.printf("   Suma proyectos (n=%d):     O(n)\n", proyectosPorMes.length);
         System.out.printf("   Doble for  (%dx%d=%d):     O(n x m) → O(n^2)\n",
-                         horasPorDia.length, metasHorasDiarias.length,
-                         horasPorDia.length * metasHorasDiarias.length);
+                         proyectosPorMes.length, metasProyectosMensuales.length,
+                         proyectosPorMes.length * metasProyectosMensuales.length);
         System.out.println("   Busqueda binaria:         O(log n)");
         System.out.println("   Complejidad total:        O(n^2)");
         System.out.println("================================================\n");
@@ -198,15 +195,7 @@ public class Holi {
         System.out.println("del Trabajo, con obligacion de pagar prestaciones.");
         System.out.println("================================================\n");
     }
-}
 
-
-
-
-package Funcion6Parametros;
-import static Funcion6Parametros.Holi.calcularHonorariosCompleto;
-
-public class Main {
 
     public static void main(String[] args) {
         System.out.println("================================================");
@@ -223,16 +212,17 @@ public class Main {
         System.out.print("Duracion del contrato en meses: ");
         int mesesContrato = Integer.parseInt(System.console().readLine());
 
-        // ──── Lectura del arreglo horasPorDia ────
-        System.out.printf("Ingrese las horas trabajadas por cada uno de los %d dias:\n", diasTrabajados);
-        double[] horasPorDia = new double[diasTrabajados];
-        for (int i = 0; i < diasTrabajados; i++) {
-            System.out.printf("   Dia %d: ", i + 1);
-            horasPorDia[i] = Double.parseDouble(System.console().readLine());
-        }
+        System.out.print("Horas facturadas en el mes: ");
+        double horasFacturadas = Double.parseDouble(System.console().readLine());
 
-        System.out.print("Proyectos completados este mes: ");
-        int proyectosCompletados = Integer.parseInt(System.console().readLine());
+        // ──── Lectura del arreglo proyectosPorMes ────
+        // El tamaño del arreglo depende de mesesContrato → complejidad O(n) real
+        System.out.printf("Ingrese los proyectos completados en cada uno de los %d meses:\n", mesesContrato);
+        int[] proyectosPorMes = new int[mesesContrato];
+        for (int i = 0; i < mesesContrato; i++) {
+            System.out.printf("   Mes %d: ", i + 1);
+            proyectosPorMes[i] = Integer.parseInt(System.console().readLine());
+        }
 
         System.out.print("Nivel de riesgo ARL (1-5): ");
         int nivelRiesgoARL = Integer.parseInt(System.console().readLine());
@@ -241,11 +231,9 @@ public class Main {
             valorContrato,
             diasTrabajados,
             mesesContrato,
-            horasPorDia,           // ← arreglo en lugar de escalar
-            proyectosCompletados,
+            horasFacturadas,
+            proyectosPorMes,       // ← arreglo de tamaño mesesContrato
             nivelRiesgoARL
         );
     }
 }
-
-

@@ -1,60 +1,84 @@
 package Funcion6Parametros;
 
 public class Holi {
-    
-    
+
     public static void calcularHonorariosCompleto(
         double valorContrato,
         int diasTrabajados,
         int mesesContrato,
         double horasFacturadas,
-        int proyectosCompletados,
+        int[] proyectosPorMes,        // ← ARREGLO: proyectos completados cada mes del contrato
         int nivelRiesgoARL
     ) {
-        
+
         // ──── ୨୧ ──── CALCULO BASE SEGURIDAD SOCIAL ──── ୨୧ ──── O(1)
-        
-        double baseSeguridad = valorContrato * 0.40; // 40% del contrato
-        
+
+        double baseSeguridad = valorContrato * 0.40;
+
         // ──── ୨୧ ──── PORCENTAJE ARL SEGUN NIVEL DE RIESGO ──── ୨୧ ──── O(1)
-        
-        double porcentajeARL = 0.00522; // Riesgo 1 por defecto
-        
-        if (nivelRiesgoARL == 2) {
-            porcentajeARL = 0.01044;
-        } else if (nivelRiesgoARL == 3) {
-            porcentajeARL = 0.02436;
-        } else if (nivelRiesgoARL == 4) {
-            porcentajeARL = 0.04350;
-        } else if (nivelRiesgoARL == 5) {
-            porcentajeARL = 0.06960;
-        }
-        
+
+        double porcentajeARL = 0.00522;
+        if (nivelRiesgoARL == 2)      porcentajeARL = 0.01044;
+        else if (nivelRiesgoARL == 3) porcentajeARL = 0.02436;
+        else if (nivelRiesgoARL == 4) porcentajeARL = 0.04350;
+        else if (nivelRiesgoARL == 5) porcentajeARL = 0.06960;
+
         // ──── ୨୧ ──── DESCUENTOS SEGURIDAD SOCIAL ──── ୨୧ ──── O(1)
-        
-        double descuentoSalud = baseSeguridad * 0.125;      // 12.5%
-        double descuentoPension = baseSeguridad * 0.16;     // 16%
-        double descuentoARL = baseSeguridad * porcentajeARL;
-        
+
+        double descuentoSalud       = baseSeguridad * 0.125;
+        double descuentoPension     = baseSeguridad * 0.16;
+        double descuentoARL         = baseSeguridad * porcentajeARL;
         double totalSeguridadSocial = descuentoSalud + descuentoPension + descuentoARL;
-        
-        // ──── ୨୧ ──── VALOR NETO PARCIAL (SIN BONOS) ──── ୨୧ ──── O(1)
-        
-        double valorNetoParcial = valorContrato - totalSeguridadSocial;
-        
+        double valorNetoParcial     = valorContrato - totalSeguridadSocial;
+
+        // ──── ୨୧ ──── SUMA TOTAL DE PROYECTOS ──── ୨୧ ──── O(n)
+        // n = proyectosPorMes.length = mesesContrato (tamaño del arreglo recibido como parámetro)
+
+        int totalProyectos = 0;
+        for (int i = 0; i < proyectosPorMes.length; i++) {
+            totalProyectos += proyectosPorMes[i];
+        }
+
+        // ──── ୨୧ ──── ARREGLO INTERNO DE METAS DE PROYECTOS ──── ୨୧ ──── O(1)
+        // Metas de proyectos por mes según política interna de la empresa
+
+        int[] metasProyectosMensuales = {1, 2, 3, 5};
+
+        // ──── ୨୧ ──── COMPARACION proyectosPorMes VS metasProyectosMensuales ──── ୨୧ ──── O(n × m) → O(n²)
+        // n = proyectosPorMes.length = mesesContrato (viene del parámetro, crece con la entrada)
+        // m = metasProyectosMensuales.length = 4 (fijo)
+        // A mayor duración del contrato → más meses → más iteraciones → O(n²) real
+
+        double bonoRendimiento = 0;
+        int mesesSuperanMeta   = 0;
+
+        for (int i = 0; i < proyectosPorMes.length; i++) {                // recorre cada mes del contrato
+            for (int j = 0; j < metasProyectosMensuales.length; j++) {    // compara contra cada meta
+                if (proyectosPorMes[i] >= metasProyectosMensuales[j]) {
+                    bonoRendimiento += valorContrato * 0.005;              // +0.5% por cada meta superada ese mes
+                }
+            }
+            if (proyectosPorMes[i] >= metasProyectosMensuales[0]) {
+                mesesSuperanMeta++;
+            }
+        }
+
+        // ──── ୨୧ ──── BONO BASE POR PROYECTOS TOTALES (CADA 3) ──── ୨୧ ──── O(1)
+
+        int gruposDe3Proyectos = totalProyectos / 3;
+        double bonoProyectos   = gruposDe3Proyectos * 150000;
+        int proyectosRestantes = totalProyectos % 3;
+
         // ──── ୨୧ ──── BUSQUEDA BINARIA - BONO POR DURACION CONTRATO ──── ୨୧ ──── O(log n)
-        
-        int[] tablaMesesContrato = {1, 3, 6, 9, 12, 18, 24, 36};
+
+        int[] tablaMesesContrato      = {1, 3, 6, 9, 12, 18, 24, 36};
         double[] tablaPorcentajeBonos = {0.0, 1.5, 3.0, 4.5, 6.0, 8.0, 10.0, 12.0};
-        
-        int inicio = 0;
-        int fin = tablaMesesContrato.length - 1;
+
+        int inicio = 0, fin = tablaMesesContrato.length - 1;
         double porcentajeBonoDuracion = 0.0;
-        
-        // Búsqueda binaria con ciclo while para encontrar el porcentaje de bono según meses de contrato
+
         while (inicio <= fin) {
             int medio = (inicio + fin) / 2;
-            
             if (tablaMesesContrato[medio] == mesesContrato) {
                 porcentajeBonoDuracion = tablaPorcentajeBonos[medio];
                 break;
@@ -64,31 +88,21 @@ public class Holi {
                 fin = medio - 1;
             }
         }
-        
-        // Si no se encontró exactamente, tomar el rango anterior
-        if (porcentajeBonoDuracion == 0.0) {
-            if (fin < 0) {
-                porcentajeBonoDuracion = tablaPorcentajeBonos[0];
-            } else {
-                porcentajeBonoDuracion = tablaPorcentajeBonos[fin];
-            }
-        }
-        
+        if (porcentajeBonoDuracion == 0.0 && fin >= 0)
+            porcentajeBonoDuracion = tablaPorcentajeBonos[fin];
+
         double bonoDuracion = valorContrato * (porcentajeBonoDuracion / 100);
-        
+
         // ──── ୨୧ ──── BUSQUEDA BINARIA - BONO POR DIAS TRABAJADOS ──── ୨୧ ──── O(log n)
-        
-        int[] tablaDiasTrabajados = {15, 20, 25, 28, 30};
+
+        int[] tablaDiasTrabajados    = {15, 20, 25, 28, 30};
         double[] tablaPorcentajeDias = {0.0, 0.5, 1.0, 1.5, 2.0};
-        
-        inicio = 0;
-        fin = tablaDiasTrabajados.length - 1;
+
+        inicio = 0; fin = tablaDiasTrabajados.length - 1;
         double porcentajeBonoDias = 0.0;
-        
-        // Búsqueda binaria con ciclo while
+
         while (inicio <= fin) {
             int medio = (inicio + fin) / 2;
-            
             if (tablaDiasTrabajados[medio] == diasTrabajados) {
                 porcentajeBonoDias = tablaPorcentajeDias[medio];
                 break;
@@ -98,88 +112,65 @@ public class Holi {
                 fin = medio - 1;
             }
         }
-        
-        if (porcentajeBonoDias == 0.0) {
-            if (fin < 0) {
-                porcentajeBonoDias = tablaPorcentajeDias[0];
-            } else {
-                porcentajeBonoDias = tablaPorcentajeDias[fin];
-            }
-        }
-        
-        double bonoDias = valorContrato * (porcentajeBonoDias / 100);
-        
-        
-        // ──── ୨୧ ──── COMPARACION BONOS VS METAS ──── ୨୧ ──── O(n^2)
-        
-        double[] bonosMensuales = {180000, 220000, 200000, 250000, 190000, 210000};
-        double[] metasRendimiento = {180000, 200000, 220000, 240000};
-        
-        double bonoExtraRendimiento = 0;
-        
-        for (int i = 0; i < bonosMensuales.length; i++) {
-            for (int j = 0; j < metasRendimiento.length; j++) {
-                if (bonosMensuales[i] >= metasRendimiento[j]) {
-                    bonoExtraRendimiento += bonosMensuales[i] * 0.05;
-                }
-            }
-        }
-        
-        // ──── ୨୧ ──── BONO POR PROYECTOS COMPLETADOS (CADA 3 PROYECTOS) ──── ୨୧ ──── O(1)
-        
-        int gruposDe3Proyectos = proyectosCompletados / 3; // División entera
-        double bonoProyectos = gruposDe3Proyectos * 150000; // $150,000 por cada 3 proyectos
-        int proyectosRestantes = proyectosCompletados % 3; // Proyectos que no completan grupo de 3
-        
-        // ──── ୨୧ ──── TOTAL CON BONOS ──── ୨୧ ──── O(1)
-        
-        double totalBonos = bonoDuracion + bonoDias + 
-                           bonoExtraRendimiento + bonoProyectos;
-        double valorTotalHonorarios = valorContrato + totalBonos;
-        double valorNetoFinal = valorTotalHonorarios - totalSeguridadSocial;
-        
-        // ──── ୨୧ ──── ANALISIS ──── ୨୧ ──── O(1)
+        if (porcentajeBonoDias == 0.0 && fin >= 0)
+            porcentajeBonoDias = tablaPorcentajeDias[fin];
 
+        double bonoDias = valorContrato * (porcentajeBonoDias / 100);
+
+        // ──── ୨୧ ──── TOTALES ──── ୨୧ ──── O(1)
+
+        double totalBonos             = bonoDuracion + bonoDias + bonoRendimiento + bonoProyectos;
+        double valorTotalHonorarios   = valorContrato + totalBonos;
+        double valorNetoFinal         = valorTotalHonorarios - totalSeguridadSocial;
         double incrementoNetoConBonos = valorNetoFinal - valorNetoParcial;
-        
+
         // ──── ୨୧ ──── IMPRESION DE RESULTADOS ──── ୨୧ ────
-        
+
         System.out.println("\n﹌﹌﹌﹌﹌﹌﹌");
         System.out.println("    LIQUIDACION CONTRATO PRESTACION SERVICIOS   ");
         System.out.println("================================================\n");
-        
+
         System.out.println("HONORARIOS:");
         System.out.printf("   Valor contrato mensual:   $%,15.2f\n", valorContrato);
         System.out.printf("   Dias trabajados mes:      %d dias\n", diasTrabajados);
         System.out.printf("   Duracion contrato:        %d meses\n", mesesContrato);
-        System.out.printf("   Horas facturadas:         %.0f horas\n", horasFacturadas);
-        System.out.printf("   Proyectos completados:    %d proyectos\n", proyectosCompletados);
+        System.out.printf("   Horas facturadas mes:     %.1f horas\n", horasFacturadas);
+        System.out.printf("   Total proyectos:          %d proyectos\n", totalProyectos);
+        System.out.printf("   Meses que superan meta:   %d de %d meses\n", mesesSuperanMeta, proyectosPorMes.length);
         System.out.printf("   Nivel riesgo ARL:         Nivel %d\n", nivelRiesgoARL);
         System.out.printf("   ----------------------------------------------\n");
+
+        System.out.println("   Proyectos por mes:");
+        for (int i = 0; i < proyectosPorMes.length; i++) {
+            System.out.printf("      Mes %2d:  %d proyecto(s)\n", i + 1, proyectosPorMes[i]);
+        }
+        System.out.printf("   ----------------------------------------------\n");
         System.out.printf("   Base seguridad social:    $%,15.2f (40%%)\n\n", baseSeguridad);
-        
+
         System.out.println("BONOS ADICIONALES:");
         System.out.printf("   Bono duracion (%.1f%%):     $%,15.2f\n", porcentajeBonoDuracion, bonoDuracion);
         System.out.printf("   Bono dias (%.1f%%):         $%,15.2f\n", porcentajeBonoDias, bonoDias);
-        System.out.printf("   Bono proyectos:           $%,15.2f (%d grupos x $150,000)\n", 
+        System.out.printf("   Bono proyectos base:      $%,15.2f (%d grupos x $150,000)\n",
                          bonoProyectos, gruposDe3Proyectos);
-        if (proyectosRestantes > 0) {
-            System.out.printf("   (Faltan %d proyecto(s) para siguiente bono)\n", 
-                             3 - proyectosRestantes);
-        }
-        System.out.printf("   Bono rendimiento:         $%,15.2f\n", bonoExtraRendimiento);
+        if (proyectosRestantes > 0)
+            System.out.printf("   (Faltan %d proyecto(s) para siguiente bono)\n", 3 - proyectosRestantes);
+        System.out.printf("   Bono rendimiento:         $%,15.2f (%d meses x %d metas)\n",
+                         bonoRendimiento, proyectosPorMes.length, metasProyectosMensuales.length);
+        System.out.printf("   Comparaciones realizadas: %d (%d meses x %d metas)\n",
+                         proyectosPorMes.length * metasProyectosMensuales.length,
+                         proyectosPorMes.length, metasProyectosMensuales.length);
         System.out.printf("   ----------------------------------------------\n");
         System.out.printf("   TOTAL BONOS:              $%,15.2f\n", totalBonos);
         System.out.printf("   VALOR TOTAL HONORARIOS:   $%,15.2f\n\n", valorTotalHonorarios);
-        
+
         System.out.println("SEGURIDAD SOCIAL (CONTRATISTA):");
         System.out.printf("   Salud (12.5%%):            $%,15.2f\n", descuentoSalud);
         System.out.printf("   Pension (16%%):            $%,15.2f\n", descuentoPension);
-        System.out.printf("   ARL Riesgo %d (%.3f%%):    $%,15.2f\n", 
+        System.out.printf("   ARL Riesgo %d (%.3f%%):    $%,15.2f\n",
                          nivelRiesgoARL, porcentajeARL * 100, descuentoARL);
         System.out.printf("   ----------------------------------------------\n");
         System.out.printf("   TOTAL SEGURIDAD SOCIAL:   $%,15.2f\n\n", totalSeguridadSocial);
-        
+
         System.out.println("================================================");
         System.out.println("   COMPARATIVA DE VALORES NETOS");
         System.out.println("================================================");
@@ -188,6 +179,17 @@ public class Holi {
         System.out.printf("   ----------------------------------------------\n");
         System.out.printf("   VALOR NETO FINAL:         $%,15.2f\n\n", valorNetoFinal);
 
+        System.out.println("================================================");
+        System.out.println("   ANALISIS DE COMPLEJIDAD");
+        System.out.println("================================================");
+        System.out.printf("   Suma proyectos (n=%d):     O(n)\n", proyectosPorMes.length);
+        System.out.printf("   Doble for  (%dx%d=%d):     O(n x m) → O(n^2)\n",
+                         proyectosPorMes.length, metasProyectosMensuales.length,
+                         proyectosPorMes.length * metasProyectosMensuales.length);
+        System.out.println("   Busqueda binaria:         O(log n)");
+        System.out.println("   Complejidad total:        O(n^2)");
+        System.out.println("================================================\n");
+
         System.out.println("\n🚨 ADVERTENCIA LEGAL:");
         System.out.println("Si existe subordinacion, horario fijo, cumplimiento");
         System.out.println("de ordenes o jefe directo, este contrato podria");
@@ -195,5 +197,5 @@ public class Holi {
         System.out.println("del Trabajo, con obligacion de pagar prestaciones.");
         System.out.println("================================================\n");
     }
-    
+
 }
